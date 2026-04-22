@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Area Codes in Brazil - GeoGuessr Trainer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <header>
+    <h1 id="main-title">AREA CODES IN BRAZIL</h1>
+    <p id="main-subtitle">Usa la rueda del ratón para hacer Zoom · Arrastra para mover el mapa</p>
+  </header>
+
+  <div class="map-wrap">
+    <svg id="map-svg" viewBox="0 0 800 740"></svg>
+  </div>
+
+  <div class="controls">
+    <button id="btn-reveal">REVELAR TODOS</button>
+    <button id="btn-reset">REINICIAR</button>
+    <button id="btn-lang">ENGLISH</button>
+  </div>
+
+  <div class="counter"><span id="counter-label">Revelados:</span> <em id="cnt">0</em> / <em id="total">0</em></div>
+
+  <div id="tooltip"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

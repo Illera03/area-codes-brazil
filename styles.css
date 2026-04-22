@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #0f1117;
+    --panel: #15181f;
+    --accent: #000000;
+    --accent2: #ff6b35;
+    --text: #ffffff;
+    --muted: #4a5060;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px;
+    overflow-x: hidden;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: 5px;
+    color: var(--accent2);
+    text-shadow: 0 0 40px rgba(0, 229, 255, 0.25);
+}
+
+header p {
+    color: var(--text);
+    font-size: 0.75rem;
+    margin-top: 4px;
+    letter-spacing: 1px;
+}
+
+.map-wrap {
+    width: 100%;
+    max-width: 860px;
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 0 80px rgba(0, 229, 255, 0.06), 0 8px 50px rgba(0, 0, 0, 0.6);
+    cursor: grab;
+}
+
+.map-wrap:active {
+    cursor: grabbing;
+}
+
+#map-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    outline: none;
+}
+
+.state-path {
+    stroke: #0f1117;
+    stroke-width: 0.8px;
+    transition: filter 0.12s ease;
+    cursor: pointer;
+}
+
+.state-path:hover {
+    filter: brightness(1.35) drop-shadow(0 0 5px rgba(255, 255, 255, 0.25));
+}
+
+.ddd-group {
+    cursor: pointer;
+}
+
+.ddd-bg {
+    rx: 4;
+    ry: 4;
+    transition: all 0.25s ease;
+}
+
+.ddd-text {
+    font-family: 'DM Mono', monospace;
+    font-weight: 900;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.ddd-q {
+    fill: #4a5060;
+}
+
+.ddd-num {
+    fill: var(--accent);
+    opacity: 0;
+}
+
+.ddd-bg-hidden {
+    fill: rgba(255, 107, 53, 0);
+    stroke: var(--accent);
+    stroke-width: 1;
+}
+
+.ddd-bg-revealed {
+    fill: rgba(255, 255, 255, 0);
+    stroke: var(--accent);
+    stroke-width: 1;
+}
+
+#tooltip {
+    position: fixed;
+    background: rgba(15, 17, 23, 0.95);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    letter-spacing: 1px;
+    z-index: 100;
+    white-space: nowrap;
+}
+
+.controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+button {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    padding: 9px 26px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#btn-reveal {
+    background: var(--accent2);
+    color: #000;
+}
+
+#btn-reveal:hover {
+    box-shadow: 0 0 22px rgba(0, 229, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+#btn-reset {
+    background: transparent;
+    color: var(--accent2);
+    border: 1.5px solid var(--accent2);
+}
+
+#btn-reset:hover {
+    background: rgba(255, 107, 53, 0.1);
+    box-shadow: 0 0 18px rgba(255, 107, 53, 0.3);
+    transform: translateY(-1px);
+}
+
+#btn-lang {
+    background: rgba(0, 229, 255, 0.08);
+    color: #8ff7ff;
+    border: 1.5px solid rgba(0, 229, 255, 0.5);
+}
+
+#btn-lang:hover {
+    background: rgba(0, 229, 255, 0.16);
+    box-shadow: 0 0 22px rgba(0, 229, 255, 0.35);
+    transform: translateY(-1px);
+}
+
+.counter {
+    font-size: 0.75rem;
+    color: var(--text);
+    text-align: center;
+    margin-top: 10px;
+    letter-spacing: 1px;
+}
+
+.counter em {
+    color: var(--text);
+    font-style: normal;
+}
