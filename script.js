@@ -1,4 +1,3 @@
-// Mapeo exhaustivo de DDDs a Estados
 const DDD_TO_STATE = {
     11: "São Paulo", 12: "São Paulo", 13: "São Paulo", 14: "São Paulo", 15: "São Paulo", 16: "São Paulo", 17: "São Paulo", 18: "São Paulo", 19: "São Paulo",
     21: "Rio de Janeiro", 22: "Rio de Janeiro", 24: "Rio de Janeiro", 27: "Espírito Santo", 28: "Espírito Santo",
@@ -11,43 +10,22 @@ const DDD_TO_STATE = {
     91: "Pará", 92: "Amazonas", 93: "Pará", 94: "Pará", 95: "Roraima", 96: "Amapá", 97: "Amazonas", 98: "Maranhão", 99: "Maranhão"
 };
 
-// Paleta de colores por decena
 const PREFIX_COLORS = {
     "1": "#9b59b6", "2": "#3498db", "3": "#e67e22",
     "4": "#1abc9c", "5": "#2ecc71", "6": "#f1c40f",
-    "7": "#e74c3c", "8": "#d35400", "9": "#16a085"
+    "7": "#e74c3c", "8": "#8d00d3", "9": "#16a085"
 };
 
 const revealed = new Set();
 let allDDDs = [];
-let currentLang = 'en';
 
-const UI_TEXT = {
-    es: {
-        pageTitle: 'Prefijos telefónicos de Brasil',
-        headerTitle: 'PREFIJOS TELEFÓNICOS DE BRASIL',
-        headerSubtitle: 'Usa la rueda del raton para hacer Zoom - Arrastra para mover el mapa',
-        revealButton: 'REVELAR TODOS',
-        resetButton: 'REINICIAR',
-        langButton: 'ENGLISH',
-        counterLabel: 'Revelados:',
-        fallbackRegion: 'Region',
-        loadError: 'No se pudo cargar el mapa. Revisa la consola o tu conexion a internet.',
-        loadErrorLog: 'Error al cargar el GeoJSON:'
-    },
-    en: {
-        pageTitle: 'Area Codes in Brazil',
-        headerTitle: 'AREA CODES IN BRAZIL',
-        headerSubtitle: 'Use the mouse wheel to Zoom - Drag to move the map',
-        revealButton: 'REVEAL ALL',
-        resetButton: 'RESET',
-        langButton: 'ESPAÑOL',
-        counterLabel: 'Revealed:',
-        fallbackRegion: 'Region',
-        loadError: 'Could not load the map. Check your console or internet connection.',
-        loadErrorLog: 'Error loading GeoJSON:'
-    }
-};
+const LANGUAGES = ['es', 'en', 'pt'];
+let currentLang = 'es';
+
+let isGameMode = false;
+let gameDifficulty = 'hard';
+let currentTarget = null;
+let isWaitingNextTurn = false;
 
 function t(key) {
     return UI_TEXT[currentLang][key];
@@ -61,7 +39,15 @@ function applyLanguage() {
     document.getElementById('btn-reveal').textContent = t('revealButton');
     document.getElementById('btn-reset').textContent = t('resetButton');
     document.getElementById('btn-lang').textContent = t('langButton');
+    document.getElementById('btn-game').textContent = isGameMode ? t('explorerModeBtn') : t('gameModeBtn');
     document.getElementById('counter-label').textContent = t('counterLabel');
+    document.getElementById('game-prompt').textContent = t('findDDD');
+    
+    if (document.getElementById('diff-title')) {
+        document.getElementById('diff-title').textContent = t('diffTitle');
+        document.getElementById('btn-easy').textContent = t('btnEasy');
+        document.getElementById('btn-hard').textContent = t('btnHard');
+    }
 }
 
 const W = 800, H = 740;
@@ -121,11 +107,8 @@ function updateBadge(ddd, show) {
         });
 }
 
-// EL ESCÁNER ABSOLUTO: Encuentra el DDD sin importar cómo se llame la columna
 function extractDDD(feature) {
     const props = feature.properties;
-
-    // Intentamos primero con nombres comunes por eficiencia
     for (const key in props) {
         const lowerKey = key.toLowerCase();
         if (lowerKey.includes('ddd') || lowerKey.includes('code') || lowerKey.includes('name')) {
@@ -133,8 +116,6 @@ function extractDDD(feature) {
             if (match && DDD_TO_STATE[match[1]]) return parseInt(match[1], 10);
         }
     }
-
-    // Si falla, escaneamos TODO el texto bruto de las propiedades buscando un número válido
     const str = JSON.stringify(props);
     const matches = str.match(/\b([1-9][1-9])\b/g);
     if (matches) {
@@ -142,13 +123,34 @@ function extractDDD(feature) {
             if (DDD_TO_STATE[m]) return parseInt(m, 10);
         }
     }
-    return null; // Si de verdad no hay ningún número, devolvemos null
+    return null; 
+}
+
+function nextGameTurn() {
+    if (!isGameMode) return;
+    isWaitingNextTurn = false;
+    
+    mapContainer.selectAll('.state-path').transition().duration(300).attr('fill', '#2a2e39');
+    
+    if (gameDifficulty === 'hard') {
+        currentTarget = allDDDs[Math.floor(Math.random() * allDDDs.length)];
+        document.getElementById('target-ddd').textContent = currentTarget;
+    } else {
+        const decades = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+        currentTarget = decades[Math.floor(Math.random() * decades.length)];
+        document.getElementById('target-ddd').textContent = currentTarget + "x";
+    }
 }
 
 const GEOJSON_URL = 'https://gist.githubusercontent.com/guilhermeprokisch/080c2cb1bd28e8aca54d114e453c91a4/raw/brazil_phone_area_codes.geojson';
 
 d3.json(GEOJSON_URL).then(function (geojson) {
     const projection = d3.geoMercator().fitSize([W, H], geojson);
+
+    // Centrar mapa
+    const currentTranslate = projection.translate();
+    projection.translate([currentTranslate[0] + 45, currentTranslate[1]]);
+    
     const path = d3.geoPath().projection(projection);
 
     mapContainer.selectAll('.state-path')
@@ -159,15 +161,90 @@ d3.json(GEOJSON_URL).then(function (geojson) {
         .attr('d', path)
         .attr('fill', d => {
             const ddd = extractDDD(d);
-            if (!ddd) return '#333'; // Si alguna zona es desconocida, será gris oscuro
-
+            if (!ddd) return '#333'; 
             const firstDigit = String(ddd).charAt(0);
             return PREFIX_COLORS[firstDigit] || '#555';
+        })
+        .on('mouseover', function(event, d) {
+            if (isGameMode && isWaitingNextTurn) return; 
+
+            const ddd = extractDDD(d);
+            if (!ddd) return;
+
+            // En modo fácil, iluminamos toda la macro-región a la vez al pasar el ratón
+            if (isGameMode && gameDifficulty === 'easy') {
+                const firstDigit = String(ddd).charAt(0);
+                mapContainer.selectAll('.state-path')
+                    .filter(p => {
+                        let pDdd = extractDDD(p);
+                        return pDdd && String(pDdd).charAt(0) === firstDigit;
+                    })
+                    .classed('macro-hover', true);
+            } else {
+                d3.select(this).classed('macro-hover', true);
+            }
+        })
+        .on('mousemove', function (event, d) {
+            if (isGameMode) return; 
+            const ddd = extractDDD(d);
+            const stateName = DDD_TO_STATE[ddd];
+            if (!ddd) return;
+            showTooltip(event, `${stateName || t('fallbackRegion')}`);
+        })
+        .on('mouseout', function (event, d) {
+            // Limpiamos el efecto visual al salir del polígono
+            mapContainer.selectAll('.state-path').classed('macro-hover', false);
+            hideTooltip();
         })
         .on('click', function (event, d) {
             const ddd = extractDDD(d);
             if (!ddd) return;
 
+            if (isGameMode) {
+                if (isWaitingNextTurn || document.getElementById('difficulty-modal').style.display === 'flex') return;
+                isWaitingNextTurn = true;
+
+                // Al clickar, también forzamos limpiar el hover para que no interfiera con el color de acierto/fallo
+                mapContainer.selectAll('.state-path').classed('macro-hover', false);
+
+                let isCorrect = false;
+                if (gameDifficulty === 'hard') {
+                    isCorrect = (ddd === currentTarget);
+                } else {
+                    isCorrect = (String(ddd).charAt(0) === currentTarget);
+                }
+
+                if (isCorrect) {
+                    if (gameDifficulty === 'hard') {
+                        d3.select(this).transition().duration(200).attr('fill', '#2ecc71');
+                    } else {
+                        mapContainer.selectAll('.state-path')
+                            .filter(p => {
+                                let pDdd = extractDDD(p);
+                                return pDdd && String(pDdd).charAt(0) === currentTarget;
+                            })
+                            .transition().duration(200).attr('fill', '#2ecc71');
+                    }
+                } else {
+                    if (gameDifficulty === 'hard') {
+                        mapContainer.selectAll('.state-path')
+                            .filter(p => extractDDD(p) === currentTarget)
+                            .transition().duration(200).attr('fill', '#e74c3c');
+                    } else {
+                        mapContainer.selectAll('.state-path')
+                            .filter(p => {
+                                let pDdd = extractDDD(p);
+                                return pDdd && String(pDdd).charAt(0) === currentTarget;
+                            })
+                            .transition().duration(200).attr('fill', '#e74c3c');
+                    }
+                }
+
+                setTimeout(nextGameTurn, 1500);
+                return;
+            }
+
+            // MODO NORMAL
             if (revealed.has(ddd)) {
                 revealed.delete(ddd);
                 updateBadge(ddd, false);
@@ -176,26 +253,28 @@ d3.json(GEOJSON_URL).then(function (geojson) {
                 updateBadge(ddd, true);
             }
             updateCounter();
-        })
-        .on('mousemove', function (event, d) {
-            const ddd = extractDDD(d);
-            const stateName = DDD_TO_STATE[ddd];
-            if (!ddd) return;
-            showTooltip(event, `${stateName || t('fallbackRegion')}`);
-        })
-        .on('mouseleave', hideTooltip);
+        });
 
     geojson.features.forEach(feature => {
         const ddd = extractDDD(feature);
         if (!ddd || allDDDs.includes(ddd)) return;
-        allDDDs.push(ddd);
-
-        // Cálculo a prueba de fallos del centro del polígono
+        
         let centroid = path.centroid(feature);
-        if (isNaN(centroid[0]) || isNaN(centroid[1])) {
-            const bounds = path.bounds(feature);
-            centroid = [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+        if (!centroid || isNaN(centroid[0]) || isNaN(centroid[1])) {
+            try {
+                const bounds = path.bounds(feature);
+                if (bounds && bounds[0] && bounds[1] && !isNaN(bounds[0][0])) {
+                    centroid = [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+                } else {
+                    return; 
+                }
+            } catch(e) {
+                return; 
+            }
         }
+        if (!centroid || isNaN(centroid[0]) || isNaN(centroid[1])) return;
+
+        allDDDs.push(ddd);
 
         const posX = centroid[0];
         const posY = centroid[1];
@@ -204,6 +283,7 @@ d3.json(GEOJSON_URL).then(function (geojson) {
             .attr('class', 'ddd-group')
             .attr('data-ddd', ddd)
             .on('click', function (event) {
+                if (isGameMode) return;
                 event.stopPropagation();
                 const isRevealed = revealed.has(ddd);
                 if (isRevealed) revealed.delete(ddd);
@@ -212,6 +292,7 @@ d3.json(GEOJSON_URL).then(function (geojson) {
                 updateCounter();
             })
             .on('mousemove', function (event) {
+                if (isGameMode) return;
                 const stateName = DDD_TO_STATE[ddd];
                 showTooltip(event, `${stateName || t('fallbackRegion')}`);
             })
@@ -264,10 +345,54 @@ d3.json(GEOJSON_URL).then(function (geojson) {
     });
 
     document.getElementById('btn-lang').addEventListener('click', () => {
-        currentLang = currentLang === 'es' ? 'en' : 'es';
+        let currentIndex = LANGUAGES.indexOf(currentLang);
+        currentLang = LANGUAGES[(currentIndex + 1) % LANGUAGES.length];
         applyLanguage();
-        updateCounter();
     });
+
+    document.getElementById('btn-game').addEventListener('click', () => {
+        const banner = document.getElementById('game-banner');
+        const counterWrap = document.getElementById('counter-wrap');
+        const controls = document.querySelectorAll('#btn-reveal, #btn-reset');
+
+        if (isGameMode) {
+            isGameMode = false;
+            document.getElementById('difficulty-modal').style.display = 'none';
+            document.getElementById('btn-game').textContent = t('gameModeBtn');
+            banner.style.display = 'none';
+            counterWrap.style.display = 'block';
+            controls.forEach(c => c.style.display = 'inline-block');
+            
+            mapContainer.selectAll('.ddd-group').style('display', 'block');
+            isWaitingNextTurn = false;
+            currentTarget = null;
+
+            mapContainer.selectAll('.state-path').transition().duration(300).attr('fill', d => {
+                const ddd = extractDDD(d);
+                if (!ddd) return '#333'; 
+                const firstDigit = String(ddd).charAt(0);
+                return PREFIX_COLORS[firstDigit] || '#555';
+            });
+        } else {
+            isGameMode = true; 
+            document.getElementById('difficulty-modal').style.display = 'flex';
+            document.getElementById('btn-game').textContent = t('explorerModeBtn');
+            controls.forEach(c => c.style.display = 'none');
+            counterWrap.style.display = 'none';
+            mapContainer.selectAll('.ddd-group').style('display', 'none');
+            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity); 
+        }
+    });
+
+    document.getElementById('btn-easy').addEventListener('click', () => startGame('easy'));
+    document.getElementById('btn-hard').addEventListener('click', () => startGame('hard'));
+
+    function startGame(difficulty) {
+        gameDifficulty = difficulty;
+        document.getElementById('difficulty-modal').style.display = 'none';
+        document.getElementById('game-banner').style.display = 'block';
+        nextGameTurn();
+    }
 
 }).catch(err => {
     console.error(t('loadErrorLog'), err);

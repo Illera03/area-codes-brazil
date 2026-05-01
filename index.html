@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Area Codes in Brazil - GeoGuessr Trainer</title>
+  <title>Prefijos telefónicos de Brasil</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,24 +12,40 @@
 <body>
 
   <header>
-    <h1 id="main-title">AREA CODES IN BRAZIL</h1>
+    <h1 id="main-title">PREFIJOS TELEFÓNICOS DE BRASIL</h1>
     <p id="main-subtitle">Usa la rueda del ratón para hacer Zoom · Arrastra para mover el mapa</p>
   </header>
 
   <div class="map-wrap">
+    <!-- Modal de dificultad -->
+    <div id="difficulty-modal">
+      <h2 id="diff-title" style="color: #fff; margin-bottom: 24px; font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 2px;">SELECCIONA LA DIFICULTAD</h2>
+      <div style="display: flex; gap: 16px;">
+        <button id="btn-easy" class="btn-orange">FÁCIL (Por decena)</button>
+        <button id="btn-hard" class="btn-orange">DIFÍCIL (Exacto)</button>
+      </div>
+    </div>
+
+    <!-- Panel del juego-->
+    <div id="game-banner" style="display: none; text-align: center; margin-bottom: 10px; font-size: 1.5rem;">
+      <span id="game-prompt" style="color: #fff;">Encuentra el prefijo:</span> <strong id="target-ddd" style="font-size: 2.5rem; color: var(--accent2); margin-left: 8px;"></strong>
+    </div>
+    
     <svg id="map-svg" viewBox="0 0 800 740"></svg>
   </div>
 
   <div class="controls">
-    <button id="btn-reveal">REVELAR TODOS</button>
-    <button id="btn-reset">REINICIAR</button>
+    <button id="btn-reveal" class="btn-orange">REVELAR TODOS</button>
+    <button id="btn-reset" class="btn-orange">REINICIAR</button>
+    <button id="btn-game" class="btn-orange">MODO JUEGO</button>
     <button id="btn-lang">ENGLISH</button>
   </div>
 
-  <div class="counter"><span id="counter-label">Revelados:</span> <em id="cnt">0</em> / <em id="total">0</em></div>
+  <div class="counter" id="counter-wrap"><span id="counter-label">Revelados:</span> <em id="cnt">0</em> / <em id="total">0</em></div>
 
   <div id="tooltip"></div>
 
+  <script src="lang.js"></script>
   <script src="script.js"></script>
 </body>
 
