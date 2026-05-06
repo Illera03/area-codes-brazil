@@ -35,7 +35,7 @@ const sfxError = new Audio('sounds/error.ogg');
 
 // Bajar el volumen para que no sean intrusivos
 sfxSwitch.volume = 0.15;
-sfxClick.volume = 0.15;
+sfxClick.volume = 0.05;
 sfxSuccess.volume = 0.2;
 sfxError.volume = 0.2;
 

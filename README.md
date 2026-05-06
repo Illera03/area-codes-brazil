@@ -2,8 +2,8 @@
 
 An interactive and visual way to learn and memorize Brazil's area codes (DDD - *Discagem Direta a Distância*), perfect for GeoGuessr players.
 
-![Main Map](index-image.png)
-![Game Mode](game-mode-image.png)
+![Main Map](img/index-image.png)
+![Game Mode](img/game-mode-image.png)
 
 ## 🎮 Play it now
 
