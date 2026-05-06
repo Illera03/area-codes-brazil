@@ -27,6 +27,27 @@ let gameDifficulty = 'hard';
 let currentTarget = null;
 let isWaitingNextTurn = false;
 
+// --- SISTEMA DE AUDIO ---
+const sfxSwitch = new Audio('sounds/switch.ogg');
+const sfxClick = new Audio('sounds/click.ogg');
+const sfxSuccess = new Audio('sounds/success.ogg');
+const sfxError = new Audio('sounds/error.ogg');
+
+// Bajar el volumen para que no sean intrusivos
+sfxSwitch.volume = 0.15;
+sfxClick.volume = 0.15;
+sfxSuccess.volume = 0.2;
+sfxError.volume = 0.2;
+
+// Función global para reproducir sonido
+function playSound(audio) {
+    audio.currentTime = 0; // Reinicia el audio para que suene aunque se haga clic muy rápido
+    audio.play().catch(e => {
+        // Los navegadores bloquean el audio si el usuario no ha interactuado con la página aún.
+        // Este catch evita que salgan errores rojos en la consola.
+    });
+}
+
 function t(key) {
     return UI_TEXT[currentLang][key];
 }
@@ -215,6 +236,7 @@ d3.json(GEOJSON_URL).then(function (geojson) {
                 }
 
                 if (isCorrect) {
+                    playSound(sfxSuccess);
                     if (gameDifficulty === 'hard') {
                         d3.select(this).transition().duration(200).attr('fill', '#2ecc71');
                     } else {
@@ -226,6 +248,7 @@ d3.json(GEOJSON_URL).then(function (geojson) {
                             .transition().duration(200).attr('fill', '#2ecc71');
                     }
                 } else {
+                    playSound(sfxError);
                     if (gameDifficulty === 'hard') {
                         mapContainer.selectAll('.state-path')
                             .filter(p => extractDDD(p) === currentTarget)
@@ -245,6 +268,7 @@ d3.json(GEOJSON_URL).then(function (geojson) {
             }
 
             // MODO NORMAL
+            playSound(sfxClick);
             if (revealed.has(ddd)) {
                 revealed.delete(ddd);
                 updateBadge(ddd, false);
@@ -284,6 +308,7 @@ d3.json(GEOJSON_URL).then(function (geojson) {
             .attr('data-ddd', ddd)
             .on('click', function (event) {
                 if (isGameMode) return;
+                playSound(sfxClick);
                 event.stopPropagation();
                 const isRevealed = revealed.has(ddd);
                 if (isRevealed) revealed.delete(ddd);
@@ -324,6 +349,7 @@ d3.json(GEOJSON_URL).then(function (geojson) {
     document.getElementById('total').textContent = allDDDs.length;
 
     document.getElementById('btn-reveal').addEventListener('click', () => {
+        playSound(sfxClick);
         allDDDs.forEach(ddd => {
             if (!revealed.has(ddd)) {
                 revealed.add(ddd);
@@ -334,6 +360,7 @@ d3.json(GEOJSON_URL).then(function (geojson) {
     });
 
     document.getElementById('btn-reset').addEventListener('click', () => {
+        playSound(sfxClick);
         allDDDs.forEach(ddd => {
             if (revealed.has(ddd)) {
                 revealed.delete(ddd);
@@ -345,12 +372,14 @@ d3.json(GEOJSON_URL).then(function (geojson) {
     });
 
     document.getElementById('btn-lang').addEventListener('click', () => {
+        playSound(sfxSwitch);
         let currentIndex = LANGUAGES.indexOf(currentLang);
         currentLang = LANGUAGES[(currentIndex + 1) % LANGUAGES.length];
         applyLanguage();
     });
 
     document.getElementById('btn-game').addEventListener('click', () => {
+        playSound(sfxClick);
         const banner = document.getElementById('game-banner');
         const counterWrap = document.getElementById('counter-wrap');
         const controls = document.querySelectorAll('#btn-reveal, #btn-reset');
@@ -384,8 +413,15 @@ d3.json(GEOJSON_URL).then(function (geojson) {
         }
     });
 
-    document.getElementById('btn-easy').addEventListener('click', () => startGame('easy'));
-    document.getElementById('btn-hard').addEventListener('click', () => startGame('hard'));
+    document.getElementById('btn-easy').addEventListener('click', () => {
+        playSound(sfxClick);
+        startGame('easy');
+    });
+    
+    document.getElementById('btn-hard').addEventListener('click', () => {
+        playSound(sfxClick);
+        startGame('hard');
+    });
 
     function startGame(difficulty) {
         gameDifficulty = difficulty;
